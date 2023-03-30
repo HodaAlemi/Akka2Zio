@@ -5,29 +5,31 @@ import zio._
 
 
 trait OrderService {
-  def getOrders(): Task[Unit]
+  def getOrders(): Orders
   def submitOrders(order: Order): Task[Unit]
 }
 
 //to create the API more ergonomic, it's better to write accessor methods for all of our service methods using ZIO.serviceWithZIO constructor inside the companion object:
 object OrderService{
-  def getOrders(): ZIO[OrderService, Nothing, Task[Unit]] = ZIO.serviceWith[OrderService](_.getOrders())
+  def getOrders(): ZIO[OrderService, Throwable, Orders] = ZIO.serviceWith[OrderService](_.getOrders())
 
   def submitOrder(order: Order): ZIO[OrderService, Nothing, Task[Unit]] = ZIO.serviceWith[OrderService](_.submitOrders(order))
 }
 object OrderServiceImp {
-  val live: ZLayer[OrderService, Nothing, OrderServiceImp.type] = ZLayer {
-    for {
-      _ <- ZIO.service[OrderService]
-    } yield OrderServiceImp
-  }
+//  val live: ZLayer[OrderService, Nothing, OrderServiceImp.type] = ZLayer {
+//    for {
+//      _ <- ZIO.service[OrderService]
+//    } yield OrderServiceImp
+//  }
+
+  val live: ZLayer[Any, Nothing, OrderService] = ZLayer.succeed(OrderServiceImp.apply())
 }
 case class OrderServiceImp() extends OrderService {
-  var ordersSet: Set[Order] = Set.empty
-  override def getOrders(): Task[Unit] = for {
-   // _ <- Orders(ordersSet.toSeq)
-    _ <- ZIO.log(s"${ordersSet.size} orders found.")
-  } yield Orders(ordersSet.toSeq)
+  private var ordersSet: Set[Order] = Set.empty
+  override def getOrders(): Orders =  {
+     ZIO.log(s"${ordersSet.size} orders found.")
+    Orders(ordersSet.toSeq)
+  }
 
   override def submitOrders(order: Order)= for {
         _ <- ZIO.log(s"OrderID ${order.id} processed.")

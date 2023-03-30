@@ -6,7 +6,8 @@ An example of migration of Classic Akka to Zio. Master branch has Classic Akka i
 The build tool is ```sbt``` and server will be available at http://localhost:9001/
 
 ## Post endpoint json example
-```{
+```
+{
     "id": 1,
     "items": [
         {
