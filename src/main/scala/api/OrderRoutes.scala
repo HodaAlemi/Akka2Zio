@@ -1,55 +1,34 @@
 package api
 
-import actors.ProcessOrderActor.ActionExecuted
-import actors.RegisterOrderActor.{GetOrders, Order, Orders, SubmitOrder}
-import akka.actor.{ActorRef, ActorSystem}
-import akka.event.Logging
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.{onSuccess, _}
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.directives.PathDirectives.path
-import akka.http.scaladsl.server.directives.RouteDirectives.complete
-import akka.pattern.ask
-import akka.util.Timeout
+import api.Model._
+import zhttp.http.{Response, _}
+import zio._
+import zio.json._
+import service.OrderService
+import zhttp.http.Method.POST
 
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
+trait OrderRoutes extends JsonDecoders {
 
-trait OrderRoutes extends JsonProtocol {
+  val httpApp: Http[OrderService, Throwable, Request, Response] = Http.collectZIO[Request] {
+    case Method.GET -> !! / "orders" => for {
+      orders <- OrderService.getOrders()
+    } yield (Response.json(orders.toString))
 
-  implicit def system: ActorSystem
-  implicit lazy val exec: ExecutionContext = system.dispatcher
-  implicit lazy val timeout = Timeout(5.seconds)
-  lazy val log = Logging(system, classOf[OrderRoutes])
-  def registerOrderActor: ActorRef
+    case req@POST -> _ / "order" => (
+        for {
+          body <- req.bodyAsString
+          order <- ZIO.fromEither(body.fromJson[Order].left.map(e => DecodeError(e)))
+          _ <- OrderService.submitOrder(order)
+        } yield (Response.status(Status.Created))
+      )
+  }
 
-  val getOrdersRoute: Route = path("orders") {
-      pathEnd {
-        get {
-          val orders: Future[Orders] =
-            (registerOrderActor ? GetOrders()).mapTo[Orders]
-          complete(orders)
-        }
-      }
-    }
-
-
-  val submitOrderRoute: Route = path("order") {
-      pathEnd {
-        post {
-          entity(as[Order]) { order =>
-            val orderCreated: Future[ActionExecuted] =
-              (registerOrderActor ? SubmitOrder(order)).mapTo[ActionExecuted]
-
-            onSuccess(orderCreated) { executedAction =>
-              log.info("Submitted order ID [{}]: {}", order.id, executedAction.description)
-              complete((StatusCodes.Created, executedAction))
-            }
-          }
-        }
-      }
-    }
-
-  val serviceRoute: Route = getOrdersRoute ~ submitOrderRoute
+//  def httpResponseHandler[R, A](rio: RIO[R, A], onSuccess: A => Response) : URIO[R, Response] =  rio.fold(
+//    {
+//      case DecodeError(msg) => Response.fromHttpError(HttpError.BadRequest(msg))
+//      case NotFoundError(msg) => Response.fromHttpError(HttpError.UnprocessableEntity(msg))
+//      case e => Response.fromHttpError(HttpError.InternalServerError(e.getMessage))
+//    }, onSuccess
+//  )
 
 }

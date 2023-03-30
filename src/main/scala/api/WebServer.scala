@@ -1,31 +1,28 @@
 package api
 
-import actors.RegisterOrderActor
-import akka.actor.{ActorRef, ActorSystem }
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.Route
-import akka.stream.ActorMaterializer
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
+import service.OrderServiceImp
+import zhttp.service.Server
+import zio._
 
-object WebServer extends App with OrderRoutes {
+object WebServer extends ZIOAppDefault with OrderRoutes {
 
-  implicit val system =  ActorSystem("AkkaHttpServer")
-  implicit val materializer = ActorMaterializer()
+  val port: Int = 9001
 
-  /*  akka typed */
-  //val orderRegistryActor = ActorSystem("AkkaHttpServer")
+  val server = for {
+    _ <- ZIO.log(s"Starting server on http://localhost:${port}")
+    _ <- Server.start(port, httpApp).provideLayer(
+
+      OrderServiceImp.live
+    ).catchAll(t => ZIO.succeed(t.printStackTrace()).map(_ => ExitCode.failure))
+  } yield ExitCode.success
+
+  //def run: RIO[Scope, Nothing] = Server(routes).withBinding("localhost", 9001).startDefault
+  def run = {
+    server
+  }
 
 
-  /* classic akka */
-  val registerOrderActor: ActorRef = system.actorOf(RegisterOrderActor.props, "registerOrderActor")
+  //println(s"Server online at http://localhost:9001/")
 
-  lazy val routes: Route = serviceRoute
-
-  Http().bindAndHandle(routes, "localhost", 9001)
-
-  println(s"Server online at http://localhost:9001/")
-
-  Await.result(system.whenTerminated, Duration.Inf)
 }

@@ -2,7 +2,7 @@ name := "Akka2Zio"
 
 version := "0.1.0-SNAPSHOT"
 
-scalaVersion := "2.13.8"
+scalaVersion := "2.13.4"
 
 lazy val root = (project in file("."))
   .settings(
@@ -10,14 +10,10 @@ lazy val root = (project in file("."))
   )
 
 val akkaHttpVersion= "10.1.8"
-val akkaVersion= "2.6.0"
+val zioHttpVersion = "2.0.0-RC10"
+val zioVersion = "2.0.0"
 
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion,
-  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
-  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
-  "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
-
   "org.scalatest" %% "scalatest" % "3.2.0" % Test,
 
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
@@ -26,5 +22,13 @@ libraryDependencies ++= Seq(
 
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
   "org.slf4j" % "slf4j-api" % "1.7.30",
-  "ch.qos.logback" % "logback-classic" % "1.3.0-alpha5"
+  "ch.qos.logback" % "logback-classic" % "1.3.0-alpha5",
+
+  "io.d11" %% "zhttp" % zioHttpVersion,
+  //"io.d11" %% "zhttp-test" % zioHttpVersion % Test,
+
+  "dev.zio" %% "zio" % zioVersion,
+  "dev.zio" %% "zio-test" % zioVersion,
+  "dev.zio" %% "zio-json" % "0.3.0-RC11",
+  "dev.zio" %% "zio-logging" % "2.0.0-RC2"
 )
