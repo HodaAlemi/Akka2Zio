@@ -4,48 +4,39 @@ import api.Model.{Order, Orders}
 import zio._
 
 import java.io.IOException
+import scala.collection.mutable
 
 trait OrderService {
-  def getOrders(): Orders
-  def submitOrder(order: Order): Task[Unit]
+  def getOrders(): Task[Orders]
+  def submitOrder(order: Order): Task[String]
 }
 
 //to create the API more ergonomic, it's better to write accessor methods for all of our service methods using ZIO.serviceWithZIO constructor inside the companion object:
-object OrderService{
-  def getOrders(): ZIO[OrderService, Throwable, Orders] = ZIO.serviceWith[OrderService](_.getOrders())
+object OrderService {
+  def getOrders(): ZIO[OrderService, Throwable, Orders] = ZIO.serviceWithZIO[OrderService](_.getOrders())
 
-  def submitOrder(order: Order): ZIO[OrderService, Nothing, Task[Unit]] = ZIO.serviceWith[OrderService](_.submitOrder(order))
+  def submitOrder(order: Order): ZIO[OrderService, Throwable, String] = ZIO.serviceWithZIO[OrderService](_.submitOrder(order))
 }
+
+
+
+
+////////////////////////////// OrderService in Memory or Live Implementation
+
 object OrderServiceImp {
-//  val live: ZLayer[OrderService, Nothing, OrderServiceImp.type] = ZLayer {
-//    for {
-//      _ <- ZIO.service[OrderService]
-//    } yield OrderServiceImp
-//  }   // this one was giving error in Webserver for provideLayer...
 
-  val live: ZLayer[Any, Nothing, OrderService] = ZLayer.succeed(OrderServiceImp.apply())
+  val live: ZLayer[Any, Nothing, OrderService] = ZLayer.fromZIO(
+    Ref.make(mutable.Map.empty[String, Order]).map(new OrderServiceImp(_))
+  )
 }
-case class OrderServiceImp() extends OrderService {
-  private var ordersSet: Set[Order] = Set.empty
-  override def getOrders(): Orders =  {
-    Console.printLine(s"${ordersSet.size} orders found.")
-    Orders(ordersSet.toSeq)
-  }
+case class OrderServiceImp(orderMap: Ref[mutable.Map[String, Order]]) extends OrderService {
+  override def getOrders(): UIO[Orders] = orderMap.get.map(_.values.toList).map(l => Orders(l))
 
-  override def submitOrder(order: Order)= for {
-        _ <- Console.printLine(s"OrderID ${order.id} processed.")
-      } yield (ordersSet += order)
+  override def submitOrder(order: Order): UIO[String] =
+    for {
+        id <- Random.nextUUID.map(_.toString)
+        _ <- orderMap.updateAndGet(_ addOne(id, order))
+        _ <- ZIO.log(s"OrderID ${id} processed.")
+      } yield id
 
 }
-
-
-//  override def submitOrders(order: Order) = {
-//    ZIO.acquireRelease {
-//      for {
-//        queue <- Queue.unbounded[Order]
-//        _ <- queue.offer(order).forever.fork
-//        _ <- queue.take.flatMap(queuedOrder => ordersSet += queuedOrder).forever.fork
-//        _ <- ZIO.log(s"OrderID ${order.id} processed.")
-//      } yield ()
-//    }
-//  }

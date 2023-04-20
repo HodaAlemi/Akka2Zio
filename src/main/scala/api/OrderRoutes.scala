@@ -1,37 +1,32 @@
 package api
 
 import api.Model._
-import zhttp.http.{Response, _}
-import zio._
-import zio.json._
 import service.OrderService
-import zhttp.http.Method.POST
+import zio._
+import zio.http.model.{Method, Status}
+import zio.http._
+import zio.json._
 
 trait OrderRoutes extends JsonDecoders {
 
-  val httpApp: Http[OrderService, Throwable, Request, Response] = Http.collectZIO[Request] {
+  val httpApp: Http[OrderService, Nothing, Request, Response] = Http.collectZIO[Request] {
     case Method.GET -> !! / "orders" =>
-      OrderService.getOrders().map(r => Response.json(r.toJson))
+      OrderService.getOrders.map(response => Response.json(response.toJson)).orDie
 
 
-    case req @ Method.POST -> !! / "order" =>
-//        for {
-//          body <- req.bodyAsString
-//          order <- ZIO.fromEither(body.fromJson[Order].left.map(e => DecodeError(e)))
-//          _ <- OrderService.submitOrder(order)
-//        } yield (Response.status(Status.Created))
-
-      for {
-        order <- req.bodyAsString.map(_.fromJson[Order])
+    case req @ Method.POST -> !! / "order" => (for {
+        order <- req.body.asString.map(_.fromJson[Order])
         response <- order match {
-                    case Left(e) =>
-                      Console.printLine(s"Failed to parse the input: $e").as(Response.text(e).setStatus(Status.BadRequest))
-                    case Right(o) =>
-                      println("*********** right: order is: " + o)
-                      OrderService.submitOrder(o).map(_ => Response.status(Status.Created))
+                    case Left(error) =>
+                      ZIO
+                        .debug(s"Failed to parse the input: $error")
+                        .as(Response.text(error).setStatus(Status.BadRequest))
+                    case Right(order) =>
+                      OrderService.submitOrder(order)
+                        .map(id => Response.text(Status.Created + id))
                   }
 
-      } yield response
+      } yield response).orDie
 
   }
 
