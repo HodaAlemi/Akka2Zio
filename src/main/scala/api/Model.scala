@@ -2,12 +2,8 @@ package api
 
 
 object Model {
-  //case class Order(id: Int, items: Ist[Item], totalPrice: Double, date: String)
   case class Order(item: String, price: Double)
   case class Orders(orders: List[Order])
-
-  //case class Item(id: Int, name: String, amount: Int, price: Double)
-
 
   case class DecodeError(str: String) extends Error
 
