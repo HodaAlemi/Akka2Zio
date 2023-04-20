@@ -3,18 +3,20 @@ package api
 
 import api.Model.Order
 import service.OrderServiceImp
+import zhttp.service.Server
 import zio._
-import zio.http.Server
 
 object WebServer extends ZIOAppDefault with OrderRoutes {
-  val port: Int = 9001
 
-  override val run =
-  Server
-    .serve(httpApp)
-    .provide(Server.default)
-    .provideLayer(OrderServiceImp.live)
-
-  //println(s"Server online at http://localhost:9001/")
+  println(s"Server online at http://localhost:9001/")
+  def run: ZIO[Environment with ZIOAppArgs with Scope, Any, Any] =
+    Server
+      .start(
+        port = 9001,
+        http = httpApp
+      )
+      .provide(
+        OrderServiceImp.live
+      )
 
 }
