@@ -7,8 +7,8 @@ import zio._
 import zio.json._
 
 trait OrderRoutes extends JsonDecoders {
-  /** An http app that:
-   *   - Accepts a `Request` and returns a `Response`
+  /** An http app which
+   *   - Accepts a `Request`` and produces `Response`` effectually
    *   - May fail with type of `Throwable`
    *   - Uses a `OrderService` as the environment
    */
