@@ -13,7 +13,7 @@ The build tool is ```sbt``` and server will be available at http://localhost:900
 }
 ```
 
-## GET request response example
+## GET response example
 ````
 {
     "orders": [
