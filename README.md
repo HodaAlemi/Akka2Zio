@@ -1,5 +1,5 @@
 ## Introduction
-An example of migration of Classic Akka to Zio. Main branch has Classic Akka implementation and ZIO branch has ZIO implementation of the same application.
+An example of migration of classic Akka to Zio. ``Main`` branch has classic Akka implementation and ``ZIO`` branch has ZIO implementation of the same application.
 
 
 ## Running the application
