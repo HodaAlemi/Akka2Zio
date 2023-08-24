@@ -11,7 +11,7 @@ trait OrderService {
   def submitOrder(order: Order): Task[String]
 }
 
-//to create the API more ergonomic, it's better to write accessor methods for all of our service methods using ZIO.serviceWithZIO constructor inside the companion object:
+//For a better functional design, it's better to write accessor methods for all of our service methods using ZIO.serviceWithZIO constructor inside the companion object
 object OrderService {
   def getOrders(): ZIO[OrderService, Throwable, Orders] = ZIO.serviceWithZIO[OrderService](_.getOrders())
 
