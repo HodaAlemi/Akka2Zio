@@ -5,7 +5,7 @@ An example of migration of Classic Akka to Zio. Master branch has Classic Akka i
 ## Running the application
 The build tool is ```sbt``` and server will be available at http://localhost:9001/
 
-## POST request json payload example
+## POST request payload example
 ```
 {
     "item":"milk",
@@ -13,7 +13,7 @@ The build tool is ```sbt``` and server will be available at http://localhost:900
 }
 ```
 
-## GET request response example
+## GET response example
 ````
 {
     "orders": [
